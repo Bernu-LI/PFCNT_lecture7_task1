@@ -1,104 +1,45 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Enter initial data
-v0 = float(input("Enter initial speed (m/s): "))
-angle_deg = float(input("Enter the angle between the velocity vector and the horizon line (in degrees): "))
-y0 = float(input("Enter the height from which the body was thrown (m): "))
-k = float(input("Enter the medium resistence coefficient k (kg/s) "))
+# Enter expressions for Fx and Fy from the console
+Fx_expr = input("Enter the expression for Fx(x, y): ")
+Fy_expr = input("Enter the expression for Fy(x, y): ")
 
-# Convert angle to radians
-angle_rad = np.deg2rad(angle_deg)
+# Create functions to calculate Fx and Fy
+def Fx(x, y):
+    return eval(Fx_expr)
 
-# Initial speeds along the axles
-vx0 = v0 * np.cos(angle_rad)
-vy0 = v0 * np.sin(angle_rad)
+def Fy(x, y):
+    return eval(Fy_expr)
 
-# Modeling parameters
-g = 9.81  # Acceleration of gravity, m/s^2
-m = 1.0  # Body weight, kg (can be taken as 1 kg for simplicity)
-dt = 0.01  # Time step, s
+# Create a grid of x and y values
+x = np.linspace(-5, 5, 200)
+y = np.linspace(-5, 5, 200)
+X, Y = np.meshgrid(x, y)
 
-# Initial conditions
-t = [0.0]  # Time
-x = [0.0]  # Coordinate x
-y = [y0]  # Coordinate y
-vx = [vx0]  # Speed in x
-vy = [vy0]  # Speed in y
+# Calculate Fx and Fy on a grid
+Fx_values = Fx(X, Y)
+Fy_values = Fy(X, Y)
 
-# Motion modeling
-while y[-1] >= 0:
-    # Current time
-    t_curr = t[-1] + dt
+# Initialization of potential energy U
+U = np.zeros_like(X)
 
-    # Current speeds
-    vx_curr = vx[-1]
-    vy_curr = vy[-1]
+# Steps in x and y
+dx = x[1] - x[0]
+dy = y[1] - y[0]
 
-    # Speed module
-    v = np.sqrt(vx_curr ** 2 + vy_curr ** 2)
+# Calculate potential energy U(x, y)
+# Integrate the force along the x and y axes
+for i in range(1, X.shape[0]):
+    U[i, 0] = U[i-1, 0] - Fx_values[i-1, 0] * dx
+for j in range(1, Y.shape[1]):
+    U[:, j] = U[:, j-1] - Fy_values[:, j-1] * dy
 
-    # Forces
-    Fx = -k * vx_curr
-    Fy = -m * g - k * vy_curr
-
-    # Accelerations
-    ax = Fx / m
-    ay = Fy / m
-
-    # Speed update (Euler method)
-    vx_new = vx_curr + ax * dt
-    vy_new = vy_curr + ay * dt
-
-    # Coordinate update
-    x_new = x[-1] + vx_curr * dt
-    y_new = y[-1] + vy_curr * dt
-
-    # Add new values to lists
-    t.append(t_curr)
-    vx.append(vx_new)
-    vy.append(vy_new)
-    x.append(x_new)
-    y.append(y_new)
-
-# Convert lists to arrays
-t = np.array(t)
-x = np.array(x)
-y = np.array(y)
-vx = np.array(vx)
-vy = np.array(vy)
-v = np.sqrt(vx ** 2 + vy ** 2)
-
-# Plot graphs
-plt.figure(figsize=(12, 8))
-
-# Motion trajectory graph
-plt.subplot(2, 2, 1)
-plt.plot(x, y)
-plt.title("Trajectory of body motion")
-plt.xlabel("x (m)")
-plt.ylabel("y (m)")
-
-# Speed vs Time graph
-plt.subplot(2, 2, 2)
-plt.plot(t, v)
-plt.title("Dependency of speed on time")
-plt.xlabel("t (s)")
-plt.ylabel("v (m/s)")
-
-# X vs Time graph
-plt.subplot(2, 2, 3)
-plt.plot(t, x)
-plt.title("X vs Time")
-plt.xlabel("t (s)")
-plt.ylabel("x (m)")
-
-# Y vs Time graph
-plt.subplot(2, 2, 4)
-plt.plot(t, y)
-plt.title("X vs Time")
-plt.xlabel("t (s)")
-plt.ylabel("y (m)")
-
-plt.tight_layout()
+# Visualization of potential field U(x, y)
+plt.figure(figsize=(8, 6))
+contour = plt.contourf(X, Y, U, levels=50, cmap='magma')
+plt.colorbar(contour)
+plt.title("Distribution of potential energy U(x, y)")
+plt.xlabel("x")
+plt.ylabel("y")
 plt.show()
